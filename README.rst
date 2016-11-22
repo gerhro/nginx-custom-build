@@ -1,96 +1,74 @@
-About this Nginx
+About this nginx
 ================
 
-.. important::
-   This Nginx build currently supports version 1.6.x.  Please see the
-   tags within this repository for previously supported versions
-   (``1.4.x``).
+.. image:: https://travis-ci.org/jcu-eresearch/nginx-custom-build.svg?branch=master
+   :target: https://travis-ci.org/jcu-eresearch/nginx-custom-build
 
-This version of Nginx is customised in a number of different ways:
+.. important::
+   This nginx build currently supports version 1.10.0+.  Please see the
+   tags within this repository for previously supported versions
+   (``v1.4.x``, ``v1.6.3``, ``v1.8.x``, etc).
+
+This version of nginx is customised in a number of different ways:
 
 * Adds support for Shibboleth authentication for applications served
-  by Nginx using the `nginx-http-shibboleth
+  by nginx using the `nginx-http-shibboleth
   <https://github.com/nginx-shib/nginx-http-shibboleth>`_ module. This
   requires a Shibboleth SP built with FastCGI support and correctly
   configured.
-  Shibboleth authentication with applications served via Nginx.
-* Has SPDY support built (depends on OpenSSL 1.0.1 being installed)
-* Adds LDAP authentication for Nginx using `nginx-ldap-auth
+
+  This is built as a dynamic module and deployable using its own RPM package.
+* Adds LDAP authentication for nginx using `nginx-ldap-auth
   <https://github.com/kvspb/nginx-auth-ldap>`_.
 * Has custom HTML XSLT transformation built in. This allows 
   transformation of HTML documents on-the-fly via XSL (eg that which
-  comes from `Diazo <http://diazo.org>`_ for theming).
+  comes from `Diazo <http://diazo.org>`_ for theming).  Help support
+  the `patch being merged <https://trac.nginx.org/nginx/ticket/609>`_
+  into nginx's core.
 * Has the ``ngx-fancyindex`` module for folder listings.
 * Has the ``ngx_ajp_module`` module for talking to AJP backends.
+* Has HTTP/2 support built
 * Has XLST support built.
 
 See the build script for details of where these dependencies live.
 
-Building Nginx
+Building nginx
 ==============
 
-#. Ensure Vagrant is installed.
+#. Ensure `Docker <https://docs.docker.com/>`_ and `Docker Compose
+   <https://docs.docker.com/compose>`_ are installed.
 
 #. Run the following::
 
        git clone https://github.com/jcu-eresearch/nginx-custom-build.git
        cd nginx-custom-build
-       vagrant up; vagrant destroy -f
-       ls x86_64
+       docker-compose up
 
-#. Enjoy your new RPMs, available in the current directory.
+#. Enjoy your new RPMs, available in the `build/` directory.
 
-If you're not into Vagrant, then you can manually run 
+If you're not into Docker, then you can manually run
 https://github.com/jcu-eresearch/nginx-custom-build/blob/master/nginx-build.sh
-on your own EL 6 machine, ensuring that you have the ``*.patch`` files
-from this repository in your ``~/rpmbuild/SPECS`` directory.
+on your own EL 6 machine, ensuring that you set up your build environment
+first. You can follow the `Dockerfile
+<https://github.com/jcu-eresearch/nginx-custom-build/blob/master/Dockerfile>`_
+and its ``RUN`` commands.  Otherwise, the build script is self-contained and
+will automatically clone the latest patches from this GitHub repository.
 
-This Vagrant configuration will always build the **latest stable** version
-of Nginx.
+The configuration in ``master`` will always build the **latest
+stable** version of nginx.  Occasionally, mainline compatible versions will be
+present; consult available branches.
 
+It is also possible to select a specific version of nginx to build against by
+setting the environment variable `_NGINX_VERSION` (such as
+``export _NGINX_VERSION=1.9.13``), which is used within the build script.
+From Docker Compose, you can use the following::
 
-Testing and debugging nginx-http-shibboleth
-===========================================
-
-Use the configuration `provided
-<https://github.com/jcu-eresearch/nginx-custom-build/blob/master/nginx.conf>`_,
-as your ``/etc/nginx/nginx.conf`` file, replacing anything that's already there.
-The configuration configures Nginx for debugging, and when ``nginx.debug`` 
-(from the ``nginx-debug`` package) is run, will cascade all debug messages 
-into the console.
-
-If you're specifically interested in the Shibboleth module, watch the output
-for comments consisting of ``shib request authorizer`` (and ``shib request``
-in general.  Using the configuration below, you can make a simple request 
-to make the Shib request authorizer work::
-
-    curl -i http://localhost/test1
-
-Using the configuration `provided
-<https://github.com/jcu-eresearch/nginx-custom-build/blob/master/nginx.conf>`_,
-must result in a ``401 Not Authorized`` response, which is correct.
-
-
-Tests
------
-
-Run the following::
-
-   curl -i http://localhost/test{1,2,3}
-
-and compare the request results with the comments in the configuration above.
-If any of the above don't behave exactly as specified this, the Shibboleth
-module may need to be updated.  If you find this, report an issue over at
-https://github.com/nginx-shib/nginx-http-shibboleth.
-
-If you think you've encounted a problem with the interaction with this specific
-Nginx build, then report an issue to this repository.  Thanks!
-
+    docker-compose run -e _NGINX_VERSION=1.8.1 nginx-custom-build
 
 Credits
 =======
 
 * Thanks to `Luca Bruno <https://github.com/lucab>`_ for taking my Shibboleth
-  work and creating a full Nginx module.
+  work and creating a full nginx module.
 * Thanks to Laurence Rowe for the patches for making HTML transformations
   possible at https://bitbucket.org/lrowe/nginx-xslt-html-parser
